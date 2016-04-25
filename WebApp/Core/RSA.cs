@@ -1,17 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace WebApp.Core
 {
     class Rsa
     {
-        private byte p; //destroy
-        private byte q; //destroy
-        private ushort phi; //destroy
+        //private byte p; //destroy
+        //private byte q; //destroy
+        //private ushort phi; //destroy
         private ushort n;
         private ushort e;
-        private Int32 d;
+        private int d;
 
         private struct ExtendedEuclideanResult
         {
@@ -20,68 +21,55 @@ namespace WebApp.Core
             public int gcd;
         }
 
-        public Rsa()
-        {
-            //InitKeyData();
-        }
-
         public void InitKeyData()
         {
-            Random random = new Random();
+            var random = new Random();
 
-            byte[] simple = GetNotDivideable();
-            this.p = simple[random.Next(0, simple.Length)];
-            this.q = simple[random.Next(0, simple.Length)];
-            this.n = (ushort)(this.p * this.q);
-            this.phi = (ushort)((p - 1) * (q - 1));
-            List<ushort> possibleE = GetAllPossibleE(this.phi);
+            var simple = GetNotDivideable();
+            var p = simple[random.Next(0, simple.Length)];
+            var q = simple[random.Next(0, simple.Length)];
+            n = (ushort) (p*q);
+            var phi = (ushort) ((p - 1)*(q - 1));
+            var possibleE = GetAllPossibleE(phi);
 
             do
             {
-                this.e = possibleE[random.Next(0, possibleE.Count)];
-                this.d = ExtendedEuclide(this.e % this.phi, this.phi).u1;
-            } while (this.d < 0);
+                e = possibleE[random.Next(0, possibleE.Count)];
+                d = ExtendedEuclide(e%phi, phi).u1;
+            } while (d < 0);
         }
 
-        public Int32 GetNKey()
+        public int GetNKey()
         {
-            return this.n;
+            return n;
         }
 
-        public Int32 GetEKey()
+        public int GetEKey()
         {
-            return this.e;
+            return e;
         }
 
-        public Int32 GetDKey()
+        public int GetDKey()
         {
-            return this.d;
+            return d;
         }
 
         public string encode(string text)
         {
             InitKeyData();
 
-            string outStr = "";
-            
-            //System.Text.UTF8Encoding enc = new System.Text.UTF8Encoding();
-            byte[] strBytes = Encoding.UTF8.GetBytes(text);
-            
+            var outStr = "";
 
-            //List<byte> strBytes = new List<byte>();
+            var strBytes = Encoding.UTF8.GetBytes(text);
 
-            //foreach (var VARIABLE in text)
-            //{
-            //    strBytes.Add(Convert.ToByte(VARIABLE));
-            //}
 
-            foreach (byte value in strBytes)
+            foreach (var value in strBytes)
             {
-                int encryptedValue = ModuloPow(value, this.e, this.n);
+                var encryptedValue = ModuloPow(value, e, n);
                 outStr += encryptedValue + "|";
             }
 
-           // outStr = Convert.ToBase64String(Encoding.UTF8.GetBytes(outStr));
+            // outStr = Convert.ToBase64String(Encoding.UTF8.GetBytes(outStr));
             return outStr;
         }
 
@@ -89,42 +77,33 @@ namespace WebApp.Core
         {
             //text = Encoding.UTF8.GetString(Convert.FromBase64String(text));
 
-            string outStr = "";
-            Int32 n = Int32.Parse(n_s);
-            Int32 d = Int32.Parse(d_s);
-            Int32[] arr = GetDecArrayFromText(text);
-            byte[] bytes = new byte[arr.Length];
-            System.Text.UTF8Encoding enc = new System.Text.UTF8Encoding();
-            int j=0;
-            foreach (int i in arr)
-            {
-                byte decryptedValue = (byte)ModuloPow(i, d, n);
+            var outStr = "";
+            var n = int.Parse(n_s);
+            var d = int.Parse(d_s);
+            var arr = GetDecArrayFromText(text);
+            var bytes = new byte[arr.Length];
+            var enc = new UTF8Encoding();
+            var j = 0;
 
+            foreach (var decryptedValue in arr.Select(i => (byte) ModuloPow(i, d, n)))
+            {
                 bytes[j] = decryptedValue;
                 j++;
-                
             }
             outStr += enc.GetString(bytes);
             return outStr;
         }
 
-        private Int32[] GetDecArrayFromText(string text)
+        private int[] GetDecArrayFromText(string text)
         {
-            int i = 0;
-            foreach (char c in text)
-            {
-                if (c == '|')
-                {
-                    i++;
-                }
-            }
+            var i = text.Count(c => c == '|');
 
-            Int32[] result = new Int32[i];
+            var result = new int[i];
             i = 0;
 
-            string tmp = "";
+            var tmp = "";
 
-            foreach (char c in text)
+            foreach (var c in text)
             {
                 if (c != '|')
                 {
@@ -132,7 +111,7 @@ namespace WebApp.Core
                 }
                 else
                 {
-                    result[i] = Int32.Parse(tmp);
+                    result[i] = int.Parse(tmp);
                     i++;
                     tmp = "";
                 }
@@ -143,10 +122,10 @@ namespace WebApp.Core
 
         static int ModuloPow(int value, int pow, int modulo)
         {
-            int result = value;
-            for (int i = 0; i < pow - 1; i++)
+            var result = value;
+            for (var i = 0; i < pow - 1; i++)
             {
-                result = (result * value) % modulo;
+                result = (result*value)%modulo;
             }
             return result;
         }
@@ -154,7 +133,7 @@ namespace WebApp.Core
         /// Получить все варианты для e
         static List<ushort> GetAllPossibleE(ushort phi)
         {
-            List<ushort> result = new List<ushort>();
+            var result = new List<ushort>();
 
             for (ushort i = 2; i < phi; i++)
             {
@@ -174,18 +153,18 @@ namespace WebApp.Core
         /// <param name="b">Модуль числа</param>
         private static ExtendedEuclideanResult ExtendedEuclide(int a, int b)
         {
-            int u1 = 1;
-            int u3 = a;
-            int v1 = 0;
-            int v3 = b;
+            var u1 = 1;
+            var u3 = a;
+            var v1 = 0;
+            var v3 = b;
 
             while (v3 > 0)
             {
-                int q0 = u3 / v3;
-                int q1 = u3 % v3;
+                var q0 = u3/v3;
+                var q1 = u3%v3;
 
-                int tmp = v1 * q0;
-                int tn = u1 - tmp;
+                var tmp = v1*q0;
+                var tn = u1 - tmp;
                 u1 = v1;
                 v1 = tn;
 
@@ -193,11 +172,11 @@ namespace WebApp.Core
                 v3 = q1;
             }
 
-            int tmp2 = u1 * (a);
+            var tmp2 = u1*(a);
             tmp2 = u3 - (tmp2);
-            int res = tmp2 / (b);
+            var res = tmp2/(b);
 
-            ExtendedEuclideanResult result = new ExtendedEuclideanResult()
+            var result = new ExtendedEuclideanResult
             {
                 u1 = u1,
                 u2 = res,
@@ -207,24 +186,23 @@ namespace WebApp.Core
             return result;
         }
 
-        static private byte[] GetNotDivideable()
+        private static byte[] GetNotDivideable()
         {
-            List<byte> notDivideable = new List<byte>();
+            var notDivideable = new List<byte>();
 
-            for (int x = 2; x < 256; x++)
+            for (var x = 2; x < 256; x++)
             {
-                int n = 0;
-                for (int y = 1; y <= x; y++)
+                var n = 0;
+                for (var y = 1; y <= x; y++)
                 {
-                    if (x % y == 0)
+                    if (x%y == 0)
                         n++;
                 }
 
                 if (n <= 2)
-                    notDivideable.Add((byte)x);
+                    notDivideable.Add((byte) x);
             }
             return notDivideable.ToArray();
         }
-
     }
 }
