@@ -13,15 +13,25 @@ namespace WebApp.Controllers
         DataContext db = new DataContext();
         [Route("api/Customer/search")]
         [HttpGet]
-        public IEnumerable<Customer> SearchCustomers(string searchText)
+        public IEnumerable<Customer> SearchCustomers(string searchText,string nkey,string ekey)
         {
+
+//var rsa = new Rsa();
+  //          searchText = rsa.Encode(searchText, nkey, ekey);
+         
+
+
             searchText = searchText ?? "";
-           return db.Customers
+           var customers = db.Customers
                 .Where(x => x.FullName.Contains(searchText) ||
                         x.Country.Contains(searchText) ||
                         x.City.Contains(searchText)
                 )
-                .Take(20);
+                .Take(20).ToList();
+
+         // customers.ForEach(e => Helper.ToRSA(e,nkey,ekey));
+
+            return customers;
         }
 
         [Route("api/Customer/new")]

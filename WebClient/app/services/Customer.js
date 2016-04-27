@@ -9,12 +9,12 @@
            customerService.currentCustomer = {};
 
            // Search Customers
-           customerService.search = function (text) {
+           customerService.search = function (text,n,e) {
                var deferred = $q.defer();
                return $http({
                    url: baseUrl + 'search',
                    method: 'GET',
-                   params: { 'searchText': text },
+                   params: { 'searchText': text,'nkey': n,'ekey':e },
                    cache: true
                }).success(function (data) {
                    deferred.resolve(

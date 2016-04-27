@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.SqlTypes;
 using System.Linq;
 using System.Text;
 
@@ -7,18 +8,15 @@ namespace WebApp.Core
 {
     class Rsa
     {
-        //private byte p; //destroy
-        //private byte q; //destroy
-        //private ushort phi; //destroy
-        private ushort n;
-        private ushort e;
-        private int d;
+        private ushort _n;
+        private ushort _e;
+        private int _d;
 
         private struct ExtendedEuclideanResult
         {
-            public int u1;
-            public int u2;
-            public int gcd;
+            public int U1;
+            public int U2;
+            public int Gcd;
         }
 
         public void InitKeyData()
@@ -28,58 +26,65 @@ namespace WebApp.Core
             var simple = GetNotDivideable();
             var p = simple[random.Next(0, simple.Length)];
             var q = simple[random.Next(0, simple.Length)];
-            n = (ushort) (p*q);
+            _n = (ushort) (p*q);
             var phi = (ushort) ((p - 1)*(q - 1));
             var possibleE = GetAllPossibleE(phi);
 
             do
             {
-                e = possibleE[random.Next(0, possibleE.Count)];
-                d = ExtendedEuclide(e%phi, phi).u1;
-            } while (d < 0);
+                _e = possibleE[random.Next(0, possibleE.Count)];
+                _d = ExtendedEuclide(_e%phi, phi).U1;
+            } while (_d < 0);
         }
 
         public int GetNKey()
         {
-            return n;
+            return _n;
         }
 
         public int GetEKey()
         {
-            return e;
+            return _e;
         }
 
         public int GetDKey()
         {
-            return d;
+            return _d;
         }
 
-        public string encode(string text)
+        public string Encode(string text, string nS, string eS)
+        {
+            //InitKeyData();
+
+          //  var strBytes = Encoding.UTF8.GetBytes(text);
+             _e = (byte)int.Parse(eS);
+             _n = (byte)int.Parse(nS);
+            //var arr = GetDecArrayFromText
+            return  Encode(text);
+            // outStr = Convert.ToBase64String(Encoding.UTF8.GetBytes(outStr));
+            //return strBytes.Select(value => ModuloPow(value, _e, _n))
+            //    .Aggregate("", (current, encryptedValue) => current + (encryptedValue + "|"));
+        }
+
+        public string Encode(string text)
         {
             InitKeyData();
-
-            var outStr = "";
 
             var strBytes = Encoding.UTF8.GetBytes(text);
 
 
-            foreach (var value in strBytes)
-            {
-                var encryptedValue = ModuloPow(value, e, n);
-                outStr += encryptedValue + "|";
-            }
-
             // outStr = Convert.ToBase64String(Encoding.UTF8.GetBytes(outStr));
-            return outStr;
+            return strBytes.Select(value => ModuloPow(value, _e, _n))
+                .Aggregate("", (current, encryptedValue) => current + (encryptedValue + "|"));
         }
 
-        public string decode(string text, string n_s, string d_s)
+        public string Decode(string text, string nS, string dS)
         {
             //text = Encoding.UTF8.GetString(Convert.FromBase64String(text));
 
             var outStr = "";
-            var n = int.Parse(n_s);
-            var d = int.Parse(d_s);
+            var n = int.Parse(nS);
+            var d = int.Parse(dS);
             var arr = GetDecArrayFromText(text);
             var bytes = new byte[arr.Length];
             var enc = new UTF8Encoding();
@@ -111,8 +116,7 @@ namespace WebApp.Core
                 }
                 else
                 {
-                    result[i] = int.Parse(tmp);
-                    i++;
+                    result[i++] = int.Parse(tmp);
                     tmp = "";
                 }
             }
@@ -130,14 +134,13 @@ namespace WebApp.Core
             return result;
         }
 
-        /// Получить все варианты для e
         static List<ushort> GetAllPossibleE(ushort phi)
         {
             var result = new List<ushort>();
 
             for (ushort i = 2; i < phi; i++)
             {
-                if (ExtendedEuclide(i, phi).gcd == 1)
+                if (ExtendedEuclide(i, phi).Gcd == 1)
                 {
                     result.Add(i);
                 }
@@ -146,11 +149,6 @@ namespace WebApp.Core
             return result;
         }
 
-        /// <summary>
-        /// u1 * a + u2 * b = u3
-        /// </summary>
-        /// <param name="a">Число a</param>
-        /// <param name="b">Модуль числа</param>
         private static ExtendedEuclideanResult ExtendedEuclide(int a, int b)
         {
             var u1 = 1;
@@ -178,9 +176,9 @@ namespace WebApp.Core
 
             var result = new ExtendedEuclideanResult
             {
-                u1 = u1,
-                u2 = res,
-                gcd = u3
+                U1 = u1,
+                U2 = res,
+                Gcd = u3
             };
 
             return result;

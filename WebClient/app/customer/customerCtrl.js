@@ -18,8 +18,24 @@ app.controller('customerCtrl', ['$scope', '$state', '$stateParams', '$modal', '$
 
 
     function searchCustomers() {
-        Customer.search($scope.searchText)
+
+        var rsa = new Rsa();
+      var keys=  rsa.GetPublicKey();
+        Customer.search($scope.searchText, keys.N,keys.E)
         .then(function (data) {
+
+            ////for (var ind in Customer.customers) {
+
+            ////    var rsaCustomer = Customer.customers[ind];
+
+            ////    for (var item in rsaCustomer) {
+            ////        if (rsaCustomer[item] && rsaCustomer[item] != null)
+            ////            rsaCustomer[item] = rsa.Decode(rsaCustomer[item], keys.N, keys.D);
+            ////    }
+
+
+            ////}
+
             $scope.customers = Customer.customers;
         });
     };
@@ -192,10 +208,14 @@ var Rsa = function () {
         return outStr;
     }
 
-    self.Decode = function (text)//,  n,  d)
+    self.Decode = function (text,  ns,  ds)
     {
         //text = Encoding.UTF8.GetString(Convert.FromBase64String(text));
 
+        //if (ns) {
+        //    n = ns;
+        //    d = ds;
+        //}
         var outStr = "";
         var arr = GetDecArrayFromText(text);
         var bytes = [];
